@@ -8,15 +8,21 @@
 import UIKit
 import SwiftUI
 
+enum InputState: String{
+    case scissors
+    case rock
+    case paper
+}
+
+enum GameResult: String{
+    case win = "Win!"
+    case draw = "Draw!"
+    case lose = "Lose!"
+}
+
 class SRPViewController: UIViewController {
     
     let imageData: [InputState] = [.paper, .rock, .scissors]
-    
-    enum InputState: String{
-        case scissors
-        case rock
-        case paper
-    }
     
     lazy var playStackView: UIStackView = {
         let stackView = UIStackView()
@@ -85,8 +91,8 @@ class SRPViewController: UIViewController {
         
     }()
     
-    lazy var btnScissors: UIButton = {
-        let button = UIButton()
+    lazy var btnScissors: GameButton = {
+        let button = GameButton()
         button.translatesAutoresizingMaskIntoConstraints = false // use auto layout
         button.setTitle("Scissors", for: .normal)
         button.backgroundColor = .orange
@@ -94,8 +100,8 @@ class SRPViewController: UIViewController {
         return button
     }()
     
-    lazy var btnRock: UIButton = {
-        let button = UIButton()
+    lazy var btnRock: GameButton = {
+        let button = GameButton()
         button.translatesAutoresizingMaskIntoConstraints = false // use auto layout
         button.setTitle("Rock", for: .normal)
         button.backgroundColor = .cyan
@@ -103,8 +109,8 @@ class SRPViewController: UIViewController {
         return button
     }()
     
-    lazy var btnPaper: UIButton = {
-        let button = UIButton()
+    lazy var btnPaper: GameButton = {
+        let button = GameButton()
         button.translatesAutoresizingMaskIntoConstraints = false // use auto layout
         button.setTitle("Paper", for: .normal)
         button.backgroundColor = .magenta
@@ -133,7 +139,7 @@ class SRPViewController: UIViewController {
         // add constraint
         lblCom.bottomAnchor.constraint(equalTo: playStackView.topAnchor, constant: -10).isActive = true
         lblCom.centerXAnchor.constraint(equalTo: computerGameImageView.centerXAnchor).isActive = true
-
+        
         // add player lbl
         view.addSubview(lblPlayer)
         // add constraint
@@ -157,76 +163,58 @@ class SRPViewController: UIViewController {
         inputStackView.heightAnchor.constraint(equalToConstant: 100).isActive = true
         
         inputStackView.addArrangedSubview(btnScissors)
+        btnScissors.gameTag = .scissors //set tag
         inputStackView.addArrangedSubview(btnRock)
+        btnRock.gameTag = .rock
         inputStackView.addArrangedSubview(btnPaper)
+        btnPaper.gameTag = .paper
         
-        btnScissors.addTarget(self, action: #selector(btnPressScissors), for: .touchUpInside)
-        btnPaper.addTarget(self, action: #selector(btnPressPaper), for: .touchUpInside)
-        btnRock.addTarget(self, action: #selector(btnPressRock), for: .touchUpInside)
+        btnScissors.addTarget(self, action: #selector(btnPress), for: .touchUpInside)
+        btnPaper.addTarget(self, action: #selector(btnPress), for: .touchUpInside)
+        btnRock.addTarget(self, action: #selector(btnPress), for: .touchUpInside)
     }
     
-    // press Scissors button
-    @objc func btnPressScissors(){
-        myGameImageView.image = UIImage(named: "scissors")
-        let rand = imageData.randomElement()!
-        computerGameImageView.image=UIImage(named: rand.rawValue)
+    // press button
+    @objc func btnPress(_ sender: UIButton){
+        guard let sender = sender as? GameButton else {return}
         
-        //check win or not
-        fetchGameResult(comInput: rand, myInput: .scissors)
-    }
-    // press Rock button
-    @objc func btnPressRock(){
-        myGameImageView.image = UIImage(named: "rock")
-        let rand = imageData.randomElement()!
-        computerGameImageView.image=UIImage(named: rand.rawValue)
-        
-        //check win or not
-        fetchGameResult(comInput: rand, myInput: .rock)
-    }
-    // press Paper button
-    @objc func btnPressPaper(){
-        myGameImageView.image = UIImage(named: "paper")
-        let rand = imageData.randomElement()!
-        computerGameImageView.image=UIImage(named: rand.rawValue)
-        
-        //check win or not
-        fetchGameResult(comInput: rand, myInput: .paper)
-    }
-    
-    private func fetchGameResult(comInput : InputState, myInput: InputState){
-        switch myInput {
+        switch sender.gameTag{
         case .scissors:
-            switch comInput{
-            case .scissors:
-                lblResult.text = "Drew!"
-            case .rock:
-                lblResult.text = "Lose!"
-            case .paper:
-                lblResult.text = "Win!"
-            }
+            myGameImageView.image = UIImage(named: "scissors")
         case .rock:
-            switch comInput{
-            case .rock:
-                lblResult.text = "Drew!"
-            case .paper:
-                lblResult.text = "Lose!"
-            case .scissors:
-                lblResult.text = "Win!"
-            }
+            myGameImageView.image = UIImage(named: "rock")
         case .paper:
-            switch comInput{
-            case .paper:
-                lblResult.text = "Drew!"
-            case .scissors:
-                lblResult.text = "Lose!"
-            case .rock:
-                lblResult.text = "Win!"
-            }
-            
+            myGameImageView.image = UIImage(named: "paper")
+        }
+        
+        
+        let rand = imageData.randomElement()!
+        computerGameImageView.image=UIImage(named: rand.rawValue)
+        
+        //check win or not
+        lblResult.text =  fetchGameResult(comInput: rand, myInput: sender.gameTag).rawValue
+    }
+    
+    
+    private func fetchGameResult(comInput : InputState, myInput: InputState)->GameResult{
+        switch (myInput, comInput) {
+        case (.scissors, .scissors): return .draw
+        case (.scissors, .rock): return .lose
+        case (.scissors, .paper): return .win
+        case (.rock, .scissors): return .win
+        case (.rock, .rock): return .draw
+        case (.rock, .paper): return .win
+        case (.paper, .scissors): return .lose
+        case (.paper, .rock): return .win
+        case (.paper, .paper): return .draw
         }
     }
     
     
+}
+
+class GameButton: UIButton{
+    var gameTag: InputState = .rock
 }
 
 
